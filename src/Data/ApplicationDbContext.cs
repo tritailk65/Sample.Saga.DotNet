@@ -9,6 +9,11 @@ public class ApplicationDbContext : DbContext
     // public DbSet<Good> Goods { get; set; }
     // public DbSet<Delivery> Deliveries { get; set; }
 
+    // For Unit-test
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+    {
+    }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseInMemoryDatabase(databaseName: "AuthorDb");

@@ -1,11 +1,7 @@
-using System.Reflection;
-using Choreography.Order.IntegrationEvent.EventHandling;
-using Choreography.Order.IntegrationEvent.Events;
-using Choreography.Order.Models;
-using MassTransit.Testing;
 
 namespace Choreography.Tests.NUnit;
 
+[TestFixture]
 public class when_a_booking_is_added
 {
     [Test]
@@ -14,12 +10,22 @@ public class when_a_booking_is_added
         await using var provider = new ServiceCollection()
             .ConfigureMassTransit(x =>
             {
-                // var assembly = Assembly.GetAssembly(typeof(Choreography.Order.IntegrationEvent.Events.OrderCreateEvent));
-                // x.AddConsumer(assembly);
+                //var assembly = Assembly.GetAssembly(typeof(Choreography.Order.IntegrationEvent.EventHandling.OrderCreateEventHandling));
+                var assembly = AppDomain.CurrentDomain.GetAssemblies()
+                            .Where(a => a.FullName.Contains("Choreography.Order"))
+                            .ToArray();
+
+                x.AddConsumers(assembly);
             })
+            .AddDbContext<ApplicationDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString());
+            })
+            .AddScoped<IOrderService, OrderServiceImplement>()
             .BuildServiceProvider(true);
 
         var harness = provider.GetTestHarness();
+
         await harness.Start();
         
         var orderId = NewId.NextGuid();
@@ -30,5 +36,15 @@ public class when_a_booking_is_added
 
         await harness.Bus.Publish(new OrderCreateEvent( Constans.UserId, cartItems, address));
 
+        Assert.That(await harness.Consumed.Any<OrderCreateEvent>(), "Message create order not consumed");
+
+        using var scope = provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var savedOrder = await db.Orders.FirstOrDefaultAsync();
+        Assert.That(savedOrder, Is.Not.Null);
+        Assert.That(savedOrder.DeliveryAddress, Is.EqualTo(address));
+
+        Assert.That(await harness.Published.Any<OrderCreateEventSuccess>(), Is.True);
     }
 }

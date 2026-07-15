@@ -1,5 +1,4 @@
-
-
+using Quartz;
 
 namespace Choreography.Tests.NUnit;
 
@@ -8,11 +7,15 @@ public static class ChoreographyTestConfigurationExtensions
     public static IServiceCollection ConfigureMassTransit(this IServiceCollection services, Action<IBusRegistrationConfigurator>? configure = null)
     {
         services
+            // .AddQuartz(x =>
+            // {
+            //     x.UseMicrosoftDependencyInjectionJobFactory();
+            // })
             .AddMassTransitTestHarness(x =>
             {
                 x.SetKebabCaseEndpointNameFormatter();
 
-                x.AddQuartzConsumers();
+                // x.AddQuartzConsumers();
 
                 x.AddPublishMessageScheduler();
 
