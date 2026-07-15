@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Choreography.Order/Choreography.Order.csproj" />
+  <Project Path="src/Data/Data.csproj" />
+  <Project Path="tests/Choreography.Tests.NUnit/Choreography.Tests.NUnit.csproj" />
+
+</Solution>
