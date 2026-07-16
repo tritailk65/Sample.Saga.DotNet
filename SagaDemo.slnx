@@ -1,6 +1,9 @@
 <Solution>
+
+  <Project Path="src/Choreography.Delivery/Choreography.Delivery.csproj" />
+  <Project Path="src/Choreography.Inventory/Choreography.Inventory.csproj" />
   <Project Path="src/Choreography.Order/Choreography.Order.csproj" />
-  <Project Path="src/Data/Data.csproj" />
   <Project Path="tests/Choreography.Tests.NUnit/Choreography.Tests.NUnit.csproj" />
+  <Project Path="tests/Choreography.Integration.Tests/Choreography.Integration.Tests.csproj" />
 
 </Solution>

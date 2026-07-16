@@ -1,10 +1,19 @@
+using Choreography.Order.Infrastructure;
+using Choreography.Order.Infrastructure.Entities;
+using Choreography.Order.Infrastructure.Enums;
 using Choreography.Order.Models;
 using Microsoft.EntityFrameworkCore;
 
-public class OrderServiceImplement(ApplicationDbContext dbContext) : IOrderService
+public class OrderServiceImplement(OrderDbContext dbContext) : IOrderService
 {
+    // Insert Order to db
     public async Task InsertAsync(OrderCreationModel creationModel, Guid? orderId = null, CancellationToken cancellationToken = default)
-    {
+    {    
+        // Check order
+        if (creationModel.CartItems.Count == 0)
+        {
+            throw new ArgumentException("Basket cannot empty");
+        }
         var order = new Order
         {
             Amount = creationModel.Amount,
@@ -20,6 +29,7 @@ public class OrderServiceImplement(ApplicationDbContext dbContext) : IOrderServi
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    // Delete Order
     public async Task DeleteAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         var firstOrDefault = await dbContext.Orders.FirstOrDefaultAsync(f => f.Id == orderId, cancellationToken: cancellationToken);

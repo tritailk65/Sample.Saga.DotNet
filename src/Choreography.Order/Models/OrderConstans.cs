@@ -2,7 +2,7 @@ using Choreography.Order.IntegrationEvent.Events;
 
 namespace Choreography.Order.Models;
 
-public static class Constans
+public static class OrderConstans
 {
     public static readonly Guid UserId = Guid.Parse("b185922e-3061-49a1-a9e6-28521eeca2f9");
 

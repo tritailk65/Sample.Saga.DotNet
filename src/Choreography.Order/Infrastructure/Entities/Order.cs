@@ -1,3 +1,7 @@
+using Choreography.Order.Infrastructure.Enums;
+
+namespace Choreography.Order.Infrastructure.Entities;
+
 public class Order
 {
     public required Guid Id { get; init; }

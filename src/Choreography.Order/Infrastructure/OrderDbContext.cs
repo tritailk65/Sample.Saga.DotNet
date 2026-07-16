@@ -1,23 +1,24 @@
 
+namespace Choreography.Order.Infrastructure;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Choreography.Order.Infrastructure.Entities;
+using Choreography.Order.Infrastructure.Enums;
 
-public class ApplicationDbContext : DbContext
+public class OrderDbContext : DbContext
 {
-//     public DbSet<Card> Cards { get; set; }
     public DbSet<Order> Orders { get; set; }
-    // public DbSet<Good> Goods { get; set; }
-    // public DbSet<Delivery> Deliveries { get; set; }
 
     // For Unit-test
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+    public OrderDbContext(DbContextOptions<OrderDbContext> options) : base(options)
     {
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseInMemoryDatabase(databaseName: "AuthorDb");
-    }
+    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    // {
+    //     optionsBuilder.UseInMemoryDatabase(databaseName: "OrderDb");
+    // }
     
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -1,3 +1,5 @@
+using MassTransit;
+using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
 namespace Choreography.Tests.NUnit;
