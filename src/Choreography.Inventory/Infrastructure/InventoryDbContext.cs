@@ -12,10 +12,10 @@ public class InventoryDbContext : DbContext
     {
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseInMemoryDatabase(databaseName: "InventoryDb");
-    }
+    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    // {
+    //     optionsBuilder.UseInMemoryDatabase(databaseName: "InventoryDb");
+    // }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

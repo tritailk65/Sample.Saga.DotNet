@@ -20,17 +20,13 @@ public static class ChoreographyIntegrationConfigurationExtensions
         services
             .AddDbContext<OrderDbContext>(options =>
             {
-                options.UseNpgsql(orderDbConnection, m =>
-                {
-                    m.MigrationsAssembly(typeof(OrderDbContext).Assembly.FullName); // Find migration file in Order Project
-                    m.MigrationsHistoryTable($"__{nameof(OrderDbContext)}");
-                });
+                OrderDbContextFactory.Apply(options);
             })
+            
             .AddDbContext<DeliveryDbContext>(options =>
             {
-                options.UseNpgsql(deliveryDbConnection);
+                InventoryDbContextFactor.Apply(options);
             })
-            .AddHostedService<MigrationHostedService<OrderDbContext>>()
             .AddDbContext<InventoryDbContext>(options =>
             {
                 options.UseNpgsql(inventoryDbConnection);
@@ -51,7 +47,9 @@ public static class ChoreographyIntegrationConfigurationExtensions
 
                     cfg.ConfigureEndpoints(context);
                 });
-            });
+            })
+            .AddHostedService<MigrationHostedService<OrderDbContext>>()
+            .AddHostedService<MigrationHostedService<InventoryDbContext>>();
             
 
         return services;

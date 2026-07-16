@@ -15,11 +15,15 @@ public class OrderDbContext : DbContext
     {
     }
 
+    // public OrderDbContext(DbContextOptions options) : base(options)
+    // {
+    // }
+
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {
     //     optionsBuilder.UseInMemoryDatabase(databaseName: "OrderDb");
     // }
-    
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

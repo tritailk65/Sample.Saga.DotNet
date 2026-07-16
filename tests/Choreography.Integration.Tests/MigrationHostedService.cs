@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Choreography.Integration.Tests;
-
 public class MigrationHostedService<TDbContext> :
     IHostedService
     where TDbContext : DbContext
@@ -14,7 +13,6 @@ public class MigrationHostedService<TDbContext> :
     readonly IServiceScopeFactory _scopeFactory;
     TDbContext _context;
     IServiceScope _scope;
-
 
     public MigrationHostedService(IServiceScopeFactory scopeFactory, ILogger<MigrationHostedService<TDbContext>> logger)
     {
