@@ -1,5 +1,3 @@
-using Choreography.Order.IntegrationEvent.Events;
-
 namespace Choreography.Order.Models;
 
 public class OrderCreationModel

@@ -1,0 +1,17 @@
+global using Choreography.Inventory.Infrastructure;
+global using Choreography.Inventory.Infrastructure.Entities;
+global using Choreography.Inventory.IntegrationeEvent.EventHandling;
+global using Choreography.Inventory.Services;
+global using Choreography.Order.Infrastructure;
+global using Choreography.Order.Infrastructure.Enums;
+global using Choreography.Order.IntegrationEvent.EventHandling;
+global using MassTransit;
+global using MassTransit.Testing;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.Extensions.DependencyInjection;
+global using Shared.Contracts;
+global using System.Reflection;
+global using Microsoft.EntityFrameworkCore.Design;
+global using Choreography.Delivery.Infrastructure;
+global using Choreography.Delivery.IntegrationEvent.EventHandling;
+global using Choreography.Delivery.Services;

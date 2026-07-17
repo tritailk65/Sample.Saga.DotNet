@@ -1,9 +1,9 @@
 namespace Choreography.Inventory.IntegrationeEvent.EventHandling;
 
-using Choreography.Inventory.IntegrationeEvent.Events;
 using Choreography.Inventory.Services;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Shared.Contracts;
 
 public class OrderCreateEventSuccessHandling (
     ILogger<OrderCreateEventSuccessHandling> logger,
@@ -22,8 +22,8 @@ public class OrderCreateEventSuccessHandling (
         }
         catch (Exception e)
         {
-            logger.LogError($"[{nameof(OrderCreateEventSuccessHandling)}]. Message: {e.Message}");
-            // Publish add inventory record fail
+            logger.LogError($"[{nameof(OrderCreateEventSuccessHandling)}]. Message: Goods booked by orderId fail {e.Message}");
+
             await context.Publish(new InventoryGoodsBookedInWarehouseEventFailed(context.Message.OrderId));
             return;
         }
@@ -32,7 +32,6 @@ public class OrderCreateEventSuccessHandling (
         await context.Publish(new InventoryGoodsBookedInWarehouseEventSuccess(context.Message.OrderId, context.Message.UserId, context.Message.CartItems, context.Message.Address));
         logger.LogInformation($"[{nameof(OrderCreateEventSuccessHandling)}]. Message: Successfully goods booked by orderId {context.Message.OrderId}");
     }
-
 
     private void ValidateGoodsAvailability(
         IEnumerable<GoodViewModel> goods,

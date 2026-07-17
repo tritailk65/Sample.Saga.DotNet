@@ -1,15 +1,9 @@
-using Choreography.Inventory.Infrastructure;
-using Choreography.Inventory.Infrastructure.Entities;
-using Choreography.Inventory.IntegrationeEvent;
-using Choreography.Inventory.IntegrationeEvent.Events;
 using Choreography.Inventory.Services;
-using Choreography.Order.Models;
 using MassTransit;
 using MassTransit.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Moq;
+using Shared.Contracts;
 
 
 namespace Choreography.Tests.NUnit;

@@ -1,7 +1,7 @@
-using Choreography.Delivery.IntegrationEvent.Events;
 using Choreography.Delivery.Services;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Shared.Contracts;
 
 namespace Choreography.Delivery.IntegrationEvent.EventHandling;
 
@@ -24,6 +24,6 @@ public class InventoryGoodsBookedInWarehouseEventSuccessHandling(
         }
 
         await context.Publish(new DeliverySendEventSuccess(context.Message.OrderId), context.CancellationToken);
-        logger.LogCritical($"[{nameof(InventoryGoodsBookedInWarehouseEventSuccessHandling)}]. Message: Successfully send delivery by orderId {context.Message.OrderId}");
+        logger.LogInformation($"[{nameof(InventoryGoodsBookedInWarehouseEventSuccessHandling)}]. Message: Successfully send delivery by orderId {context.Message.OrderId}");
     }
 }

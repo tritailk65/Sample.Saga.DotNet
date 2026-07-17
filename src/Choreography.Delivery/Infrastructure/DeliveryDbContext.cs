@@ -13,19 +13,15 @@ public class DeliveryDbContext : DbContext
     {
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseInMemoryDatabase(databaseName: "DeliveryDb");
-    }
+    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    // {
+    //     optionsBuilder.UseInMemoryDatabase(databaseName: "DeliveryDb");
+    // }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         
-        // builder
-        //     .Entity<Order>()
-        //     .Property(prop => prop.Status)
-        //     .HasConversion<EnumToStringConverter<OrderStatus>>();
     }
 
 }

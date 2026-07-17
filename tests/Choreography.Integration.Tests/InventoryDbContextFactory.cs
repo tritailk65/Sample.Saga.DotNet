@@ -1,8 +1,3 @@
-using System.Reflection;
-using Choreography.Inventory.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-
 public class InventoryDbContextFactor : IDesignTimeDbContextFactory<InventoryDbContext>
 {
     public InventoryDbContext CreateDbContext(params string[] args)

@@ -1,7 +1,7 @@
-using Choreography.Inventory.IntegrationeEvent.Events;
 using Choreography.Inventory.Services;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Shared.Contracts;
 
 namespace Choreography.Inventory.IntegrationeEvent.EventHandling;
 

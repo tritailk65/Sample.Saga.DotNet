@@ -1,8 +1,3 @@
-using System.Reflection;
-using Choreography.Order.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-
 public class OrderDbContextFactory : IDesignTimeDbContextFactory<OrderDbContext>
 {
     public OrderDbContext CreateDbContext(params string[] args)

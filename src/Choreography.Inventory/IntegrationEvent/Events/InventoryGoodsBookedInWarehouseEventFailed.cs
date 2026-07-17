@@ -1,3 +1,0 @@
-namespace Choreography.Inventory.IntegrationeEvent.Events;
-
-public record InventoryGoodsBookedInWarehouseEventFailed(Guid OrderId);

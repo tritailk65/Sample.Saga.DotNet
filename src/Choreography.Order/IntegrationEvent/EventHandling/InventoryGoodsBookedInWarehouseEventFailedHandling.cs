@@ -1,6 +1,6 @@
-using Choreography.Order.IntegrationEvent.Events;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Shared.Contracts;
 
 namespace Choreography.Order.IntegrationEvent.EventHandling;
 
@@ -10,8 +10,9 @@ public class InventoryGoodsBookedInWarehouseEventFailedHandling(
 {
     public async Task Consume(ConsumeContext<InventoryGoodsBookedInWarehouseEventFailed> context)
     {
-        await orderService.DeleteAsync(context.Message.OrderId, context.CancellationToken);
-        logger.LogInformation($@"[{nameof(InventoryGoodsBookedInWarehouseEventFailedHandling)}] Message: Delete order by id {context.Message.OrderId}. 
+        // await orderService.DeleteAsync(context.Message.OrderId, context.CancellationToken);
+        await orderService.UpdateStatusCancel(context.Message.OrderId, context.CancellationToken);
+        logger.LogInformation($@"[{nameof(InventoryGoodsBookedInWarehouseEventFailedHandling)}] Message: Canceled order by id {context.Message.OrderId}. 
                         Event: {nameof(InventoryGoodsBookedInWarehouseEventFailed)}");
     }
 }

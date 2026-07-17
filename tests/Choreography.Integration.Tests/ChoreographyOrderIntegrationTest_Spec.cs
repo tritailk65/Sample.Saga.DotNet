@@ -1,11 +1,3 @@
-using Choreography.Order.Infrastructure;
-using Choreography.Order.IntegrationEvent.Events;
-using Choreography.Order.Models;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Choreography.Integration.Tests;
 
 [TestFixture]
@@ -31,8 +23,9 @@ public class OrderCreateIntegrationTest
             .AddScoped<IOrderService, OrderServiceImplement>()
             .BuildServiceProvider(true);
 
-        _harness = _provider.GetTestHarness();
+        await InitializeDatabasesAsync();
 
+        _harness = _provider.GetTestHarness();
         await _harness.Start();
     }
 
@@ -51,25 +44,45 @@ public class OrderCreateIntegrationTest
     }
     #endregion
 
+    private async Task InitializeDatabasesAsync()
+    {
+        using var scope = _provider.CreateScope();
+        var orderDb = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+        
+        await orderDb.Database.EnsureDeletedAsync(); 
+        await orderDb.Database.MigrateAsync(); 
+    }
+
+    #region Mock Data
+    public static readonly Guid UserId = Guid.Parse("b185922e-3061-49a1-a9e6-28521eeca2f9");
+
+    public static readonly GoodViewModel Good = new()
+    {
+        Id = Guid.Parse("cf7c1502-a22b-4d0a-8f95-5b802e2f7948"),
+        Name = "Product",
+        Count = 1,
+        Price = 100,
+    };
+    #endregion
+
     [Test]
     public async Task Should_publish_success_event_when_added_order_to_db()
     {
-        var cartItems = new List<GoodViewModel>() { OrderConstans.Good };
+        var cartItems = new List<GoodViewModel>() { Good };
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
 
-        await _harness.Bus.Publish(new OrderCreateEvent( OrderConstans.UserId, cartItems, address));
+        await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
 
         Assert.That(await _harness.Consumed.Any<OrderCreateEvent>(), "Message create order not consumed");
 
         using var scope = _provider.CreateScope();
-        var _db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+        var _db = scope.ServiceProvider.GetRequiredService<OrderDbContext>(); 
 
         var savedOrder = await _db.Orders.FirstOrDefaultAsync();
         Assert.That(savedOrder, Is.Not.Null);
         Assert.That(savedOrder.DeliveryAddress, Is.EqualTo(address));
 
         Assert.That(await _harness.Published.Any<OrderCreateEventSuccess>(), Is.True);
-
     }
 
 }

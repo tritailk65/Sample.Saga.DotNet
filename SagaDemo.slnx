@@ -5,5 +5,5 @@
   <Project Path="src/Choreography.Order/Choreography.Order.csproj" />
   <Project Path="tests/Choreography.Tests.NUnit/Choreography.Tests.NUnit.csproj" />
   <Project Path="tests/Choreography.Integration.Tests/Choreography.Integration.Tests.csproj" />
-
+  <Project Path="src/Shared/Shared.csproj" />
 </Solution>

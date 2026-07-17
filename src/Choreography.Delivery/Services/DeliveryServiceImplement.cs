@@ -5,7 +5,7 @@ using Choreography.Delivery.Infrastructure.Entities;
 
 public class DeliveryServiceImplement(DeliveryDbContext dbContext) : IDeliveryService
 {
-    public async Task SendPackageAsync(Guid orderId, ICollection<Guid> goodIds, Guid userId,  string address, CancellationToken cancellationToken = default)
+    public async Task SendPackageAsync(Guid orderId, IList<Guid> goodIds, Guid userId,  string address, CancellationToken cancellationToken = default)
     {
         if (goodIds.Count == 0)
         {

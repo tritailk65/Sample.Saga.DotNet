@@ -29,6 +29,15 @@ public class OrderServiceImplement(OrderDbContext dbContext) : IOrderService
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task UpdateStatusCancel(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var order = await dbContext.Orders.FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+        if (order == null) throw new Exception("OrderID not found");
+        order.Status = OrderStatus.Cancled;
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+
     // Delete Order
     public async Task DeleteAsync(Guid orderId, CancellationToken cancellationToken = default)
     {

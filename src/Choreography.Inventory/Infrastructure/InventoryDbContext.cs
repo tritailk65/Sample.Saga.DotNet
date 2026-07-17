@@ -20,11 +20,7 @@ public class InventoryDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        
-        // builder
-        //     .Entity<Order>()
-        //     .Property(prop => prop.Status)
-        //     .HasConversion<EnumToStringConverter<OrderStatus>>();
+
     }
 
 }

@@ -1,5 +1,4 @@
-namespace Choreography.Order.IntegrationEvent.Events;
-
+namespace Shared.Contracts;
 public record OrderCreateEvent(Guid UserId, IEnumerable<GoodViewModel> CartItems, string Address);
 
 public class GoodViewModel

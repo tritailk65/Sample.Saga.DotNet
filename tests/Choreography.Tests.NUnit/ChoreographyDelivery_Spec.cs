@@ -1,11 +1,9 @@
-using Choreography.Delivery.Infrastructure;
-using Choreography.Delivery.IntegrationEvent.Events;
 using Choreography.Delivery.Services;
 using MassTransit;
 using MassTransit.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Shared.Contracts;
 
 namespace Choreography.Tests.NUnit;
 
@@ -82,7 +80,7 @@ public class DeliveryEventHandlingTesting
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
 
         _mockService
-            .Setup(x => x.SendPackageAsync(It.IsAny<Guid>(), It.IsAny<ICollection<Guid>>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendPackageAsync(It.IsAny<Guid>(), It.IsAny<IList<Guid>>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventSuccess(Good.Id, UserId, cartItems, address));
@@ -102,7 +100,7 @@ public class DeliveryEventHandlingTesting
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
 
         _mockService
-            .Setup(x => x.SendPackageAsync(It.IsAny<Guid>(), It.IsAny<ICollection<Guid>>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendPackageAsync(It.IsAny<Guid>(), It.IsAny<IList<Guid>>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException($"{Good.Name} cannot be equal zero items"));
 
         await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventSuccess(Good.Id, UserId, cartItems, address));

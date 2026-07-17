@@ -10,5 +10,5 @@ public class Order
     public required decimal Amount { get; init; }
     public required Guid UserId { get; init; }
     public required string DeliveryAddress { get; init; }
-    public required OrderStatus Status { get; init; }
+    public required OrderStatus Status { get; set; }
 }
