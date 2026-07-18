@@ -183,4 +183,30 @@ public class ChoreographyE2ETest()
         var order_in_db = await orderDb.Orders.FirstOrDefaultAsync(o => o.Id == actualOrderId);
         Assert.That(order_in_db?.Status, Is.EqualTo(OrderStatus.Cancled));
     }
+
+    public async Task E2E_choreography_sadpath_should_refill_inventory_and_cancel_order_when_delivery_fail()
+    {
+        var cartItems = new List<GoodViewModel>() { Good };
+        var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
+
+        // Step 1: Add inventory
+        using (var scope = _provider.CreateScope())
+        {
+            var _db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+            
+            var good = new Goods
+            {
+                Id = Good.Id,
+                Name = Good.Name,
+                Count = 0   // Zero --> out of stock
+            };
+            _db.Goods.Add(good);
+            await _db.SaveChangesAsync();
+        }
+      
+        await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
+
+
+    }
+
 }
