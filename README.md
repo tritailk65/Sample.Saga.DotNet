@@ -8,7 +8,7 @@
 - **.NET Target Framework:** .NET 8.0
 - **MassTransit:** Version 8.4.1
 
-## Choreography sequence diagram
+## Choreography flow (sequence diagram)
 
 ```mermaid
 sequenceDiagram
@@ -29,42 +29,43 @@ sequenceDiagram
     Broker-->>Inventory: Consume: OrderCreatedEvent
     activate Inventory
     Inventory->>Inventory: Check & Deduct Stock
-    Inventory->>Broker: Publish: InventoryDeductedEvent
+    Inventory->>Broker: Publish: InventoryGoodsBookedEvent
     deactivate Inventory
 
-    Broker-->>Delivery: Consume: InventoryDeductedEvent
+    Broker-->>Delivery: Consume: InventoryGoodsBookedEvent
     activate Delivery
     
     alt Happy Path (Delivery Feasible)
 
             Delivery->>Delivery: Verify Address & Dispatch Driver
-            Delivery->>Broker: Publish: DeliveryStartedEvent (or Success)
+            Delivery->>Broker: Publish: DeliverySendSuccessEvent
             
-            Broker-->>Order: Consume: DeliveryStartedEvent
+            Broker-->>Order: Consume: DeliverySendSuccessEvent
             activate Order
             Order->>Order: Update DB (Status: Completed)
             deactivate Order
 
     else Sad Path (Invalid Address / No Driver / ...)
             Delivery-->>Delivery: Business Logic Error (e.g., Invalid Address)
-            Delivery->>Broker: Publish: DeliveryFailedEvent
+            Delivery->>Broker: Publish: DeliverySendFailedEvent
             deactivate Delivery
             
             Note over Broker, Order: START COMPENSATING TRANSACTIONS
             
-            Broker-->>Inventory: Consume: DeliveryFailedEvent
+            Broker-->>Inventory: Consume: DeliverySendFailedEvent
             activate Inventory
             Inventory->>Inventory: Restore Stock Count
-            Inventory->>Broker: Publish: InventoryRestoredEvent
+            %% SỬA Ở ĐÂY: Inventory publish event của chính nó
+            Inventory->>Broker: Publish: InventoryRestoredEvent 
             deactivate Inventory
             
+            %% SỬA Ở ĐÂY: Order đợi Inventory khôi phục xong mới Hủy
             Broker-->>Order: Consume: InventoryRestoredEvent
             activate Order
             Order->>Order: Update DB (Status: Cancelled)
             deactivate Order
     end
 ```
-
 
 ## How to run 
 1. Clone this repository and navigate to the project directory:

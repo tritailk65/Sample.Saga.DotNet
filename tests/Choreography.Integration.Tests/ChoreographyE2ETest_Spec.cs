@@ -19,8 +19,10 @@ public class ChoreographyE2ETest()
                 x.AddConsumer<OrderCreateEventHandling>();
                 x.AddConsumer<OrderCreateEventSuccessHandling>();
                 x.AddConsumer<InventoryGoodsBookedInWarehouseEventSuccessHandling>(); 
-                
+                x.AddConsumer<DeliverySendEventSuccessHandling>();
                 x.AddConsumer<InventoryGoodsBookedInWarehouseEventFailedHandling>();
+                x.AddConsumer<DeliverySendEventFailedHandling>();
+                x.AddConsumer<InventoryGoodsRetoredEventSuccessHandling>();
                 
             })
             .AddScoped<IOrderService, OrderServiceImplement>()
@@ -117,6 +119,7 @@ public class ChoreographyE2ETest()
 
         // Step 5: Check add delivery success 
         Assert.That(await _harness.Published.Any<DeliverySendEventSuccess>(), Is.True, "");
+        Assert.That(await _harness.Consumed.Any<DeliverySendEventSuccess>(), Is.True, "");
 
         using var assertScope = _provider.CreateScope();
         var orderDb = assertScope.ServiceProvider.GetRequiredService<OrderDbContext>();
@@ -125,7 +128,7 @@ public class ChoreographyE2ETest()
 
         var order_in_db = await orderDb.Orders.FirstOrDefaultAsync(o => o.Id == actualOrderId);
         Assert.That(order_in_db, Is.Not.Null);
-        Assert.That(order_in_db.Status, Is.EqualTo(OrderStatus.Preparing));
+        Assert.That(order_in_db.Status, Is.EqualTo(OrderStatus.Completed));
 
         var goods_in_db = await inventoryDb.Goods.FirstOrDefaultAsync(g => g.Id == Good.Id);
         Assert.That(goods_in_db?.Id, Is.EqualTo(Good.Id));
@@ -134,7 +137,6 @@ public class ChoreographyE2ETest()
         var delivery_in_db = await deliveryDb.Deliveries.FirstOrDefaultAsync(o => o.OrderId == actualOrderId);
         Assert.That(delivery_in_db?.GoodIds, Is.EqualTo(new List<Guid>{Good.Id}));
         Assert.That(delivery_in_db?.UserId, Is.EqualTo(UserId));
-
     }
 
 
@@ -184,10 +186,11 @@ public class ChoreographyE2ETest()
         Assert.That(order_in_db?.Status, Is.EqualTo(OrderStatus.Cancled));
     }
 
-    public async Task E2E_choreography_sadpath_should_refill_inventory_and_cancel_order_when_delivery_fail()
+    [Test]
+    public async Task E2E_choreography_sadpath_should_refill_inventory_and_cancel_order_when_delivery_send_fail()
     {
         var cartItems = new List<GoodViewModel>() { Good };
-        var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
+        var address = "Invalid Address"; 
 
         // Step 1: Add inventory
         using (var scope = _provider.CreateScope())
@@ -198,7 +201,7 @@ public class ChoreographyE2ETest()
             {
                 Id = Good.Id,
                 Name = Good.Name,
-                Count = 0   // Zero --> out of stock
+                Count = Good.Count   
             };
             _db.Goods.Add(good);
             await _db.SaveChangesAsync();
@@ -206,7 +209,38 @@ public class ChoreographyE2ETest()
       
         await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
 
+        using var assertScope = _provider.CreateScope();
+        var orderDb = assertScope.ServiceProvider.GetRequiredService<OrderDbContext>();
+        var inventoryDb = assertScope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+        var deliveryDb = assertScope.ServiceProvider.GetRequiredService<DeliveryDbContext>();
 
+        Assert.That(await _harness.Consumed.Any<OrderCreateEvent>(), Is.True, "Message create order not consumed");
+        Assert.That(await _harness.Published.Any<OrderCreateEventSuccess>(), Is.True, "Order không bắn Event Success");
+
+        var orderSuccessEvent = _harness.Published.Select<OrderCreateEventSuccess>().FirstOrDefault();
+        Assert.That(orderSuccessEvent, Is.Not.Null, "Không lấy được OrderCreateEventSuccess message");
+        var actualOrderId = orderSuccessEvent.Context.Message.OrderId;
+
+        Assert.That(await _harness.Consumed.Any<OrderCreateEventSuccess>(), Is.True, "Inventory chưa tiêu thụ Event");
+        Assert.That(await _harness.Published.Any<InventoryGoodsBookedInWarehouseEventSuccess>(), Is.True, "Lỗi hàm check trừ kho");
+
+        // Waiting still message inventory book goods fails
+        Assert.That(await _harness.Published.Any<DeliverySendEventFailed>(), Is.True, "");
+        Assert.That(await _harness.Consumed.Any<DeliverySendEventFailed>(), Is.True, "");
+
+        Assert.That(await _harness.Published.Any<InventoryGoodsRestoredEventSuccess>(), Is.True);
+        Assert.That(await _harness.Consumed.Any<InventoryGoodsRestoredEventSuccess>(), Is.True);
+        
+        var delivery_in_db = await deliveryDb.Deliveries.FirstOrDefaultAsync(o => o.OrderId == actualOrderId);
+        Assert.That(delivery_in_db, Is.Null);
+
+        var goods_in_db = await inventoryDb.Goods.FirstOrDefaultAsync(g => g.Id == Good.Id);
+        Assert.That(goods_in_db?.Id, Is.EqualTo(Good.Id));
+        Assert.That(goods_in_db?.Count, Is.EqualTo(1)); // Goods return -> count = 1
+
+        var order_in_db = await orderDb.Orders.FirstOrDefaultAsync(o => o.Id == actualOrderId);
+        Assert.That(order_in_db, Is.Not.Null);
+        Assert.That(order_in_db.Status, Is.EqualTo(OrderStatus.Cancled));
     }
 
 }

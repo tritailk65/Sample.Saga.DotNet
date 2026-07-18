@@ -6,13 +6,24 @@ using Shared.Contracts;
 namespace Choreography.Inventory.IntegrationeEvent.EventHandling;
 
 
-public class DeliverySendEventFailedConsumer(
-    ILogger<DeliverySendEventFailedConsumer> logger, 
+public class DeliverySendEventFailedHandling(
+    ILogger<DeliverySendEventFailedHandling> logger, 
     IInventoryService inventoryService) : IConsumer<DeliverySendEventFailed>
 {
     public async Task Consume(ConsumeContext<DeliverySendEventFailed> context)
     {
-        await inventoryService.AddGoodsCountAsync(context.Message.CartItems.ToDictionary(x => x.Id, i => i.Count), context.CancellationToken);
-        logger.LogInformation($"[{nameof(DeliverySendEventFailedConsumer)}] Message: Cancellation of the reservation of goods on order by id {context.Message.OrderId}");
+        try
+        {
+            await inventoryService.AddGoodsCountAsync(context.Message.CartItems.ToDictionary(x => x.Id, i => i.Count), context.CancellationToken);
+            logger.LogInformation($"[{nameof(DeliverySendEventFailedHandling)}] Message: Cancellation of the reservation of goods on order by id {context.Message.OrderId}");
+
+            await context.Publish(new InventoryGoodsRestoredEventSuccess(context.Message.OrderId));
+        }
+        catch
+        {
+            logger.LogInformation($"[{nameof(DeliverySendEventFailedHandling)}] Message: Fail to return goods on order by id {context.Message.OrderId}");
+            await context.Publish(new InventoryGoodsBookedInWarehouseEventFailed(context.Message.OrderId));
+        }
+            
     }
 }

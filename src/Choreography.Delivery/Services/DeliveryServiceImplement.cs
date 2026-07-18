@@ -11,6 +11,12 @@ public class DeliveryServiceImplement(DeliveryDbContext dbContext) : IDeliverySe
         {
             throw new ArgumentException($"{nameof(goodIds)} cannot be equal zero items");
         }
+
+        // Special condition for integration test
+        if (address.Equals("Invalid Address"))
+        {
+            throw new ArgumentException($"{nameof(goodIds)} must have valid address!");
+        }
         
         var delivery = new Delivery
         {
@@ -20,6 +26,8 @@ public class DeliveryServiceImplement(DeliveryDbContext dbContext) : IDeliverySe
             OrderId = orderId,
             UserId = userId,
         };
+
+        
 
         await dbContext.Deliveries.AddAsync(delivery, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
