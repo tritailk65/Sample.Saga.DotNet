@@ -1,3 +1,3 @@
 namespace Shared.Contracts;
 
-public record OrderCreateEventFailed(Guid OrderId);
+public record OrderCreateEventFailed(Guid OrderId,  IEnumerable<GoodViewModel> CartItems);

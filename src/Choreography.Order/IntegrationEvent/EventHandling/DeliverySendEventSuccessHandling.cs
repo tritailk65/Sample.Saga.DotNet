@@ -3,6 +3,7 @@ namespace Choreography.Order.IntegrationEvent.EventHandling;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Shared.Contracts;
+using Shared.Services.Order;
 
 public class DeliverySendEventSuccessHandling(
     ILogger<DeliverySendEventSuccessHandling> logger, 

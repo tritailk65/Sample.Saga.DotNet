@@ -1,6 +1,7 @@
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Shared.Contracts;
+using Shared.Services.Order;
 
 namespace Choreography.Order.IntegrationEvent.EventHandling;
 

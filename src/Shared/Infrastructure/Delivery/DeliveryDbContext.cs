@@ -1,0 +1,26 @@
+namespace Shared.Infrastructure.Delivery.Infrastructure;
+
+using Microsoft.EntityFrameworkCore;
+using Shared.Infrastructure.Delivery.Infrastructure.Entities;
+
+public class DeliveryDbContext : DbContext
+{
+    public DbSet<Delivery> Deliveries { get; set; }
+
+    // For Unit-test
+    public DeliveryDbContext(DbContextOptions<DeliveryDbContext> options) : base(options)
+    {
+    }
+
+    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    // {
+    //     optionsBuilder.UseInMemoryDatabase(databaseName: "DeliveryDb");
+    // }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+        
+    }
+
+}

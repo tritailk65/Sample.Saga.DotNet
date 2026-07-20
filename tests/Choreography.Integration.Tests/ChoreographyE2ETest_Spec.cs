@@ -1,5 +1,3 @@
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.Internal;
-
 namespace Choreography.Integration.Tests;
 
 [TestFixture]
@@ -84,6 +82,7 @@ public class ChoreographyE2ETest()
     [Test]
     public async Task E2E_Choreography_HappyPath_Should_Process_Order_And_Deduct_Inventory()
     {
+        var orderId = NewId.NextGuid();
         var cartItems = new List<GoodViewModel>() { Good };
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
 
@@ -102,7 +101,7 @@ public class ChoreographyE2ETest()
             await _db.SaveChangesAsync();
         }
 
-        await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems, address));
 
         // Step 2: Create Order
         Assert.That(await _harness.Consumed.Any<OrderCreateEvent>(), Is.True, "Message create order not consumed");
@@ -143,6 +142,7 @@ public class ChoreographyE2ETest()
     [Test]
     public async Task E2E_Choreography_SadPath_Should_Cancel_Order_When_Inventory_Out_Of_Stock()
     {
+        var orderId = NewId.NextGuid();
         var cartItems = new List<GoodViewModel>() { Good };
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
 
@@ -161,7 +161,7 @@ public class ChoreographyE2ETest()
             await _db.SaveChangesAsync();
         }
       
-        await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
+        await _harness.Bus.Publish(new OrderCreateEvent( orderId, UserId, cartItems, address));
 
         // Step 2: Create Order
         Assert.That(await _harness.Consumed.Any<OrderCreateEvent>(), Is.True, "Message create order not consumed");
@@ -189,6 +189,7 @@ public class ChoreographyE2ETest()
     [Test]
     public async Task E2E_choreography_sadpath_should_refill_inventory_and_cancel_order_when_delivery_send_fail()
     {
+        var orderId = NewId.NextGuid();
         var cartItems = new List<GoodViewModel>() { Good };
         var address = "Invalid Address"; 
 
@@ -207,7 +208,7 @@ public class ChoreographyE2ETest()
             await _db.SaveChangesAsync();
         }
       
-        await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems, address));
 
         using var assertScope = _provider.CreateScope();
         var orderDb = assertScope.ServiceProvider.GetRequiredService<OrderDbContext>();

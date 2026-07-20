@@ -1,13 +1,15 @@
 namespace Choreography.Tests.NUnit;
 
-using Choreography.Order.Infrastructure;
-using Choreography.Order.Models;
+using Choreography.Order.IntegrationEvent.EventHandling;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Shared.Contracts;
+using Shared.Infrastructure.Order.Infrastructure;
+using Shared.Models;
+using Shared.Services.Order;
 
 [TestFixture]
 public class OrderCreateEventHandlingTests
@@ -24,18 +26,14 @@ public class OrderCreateEventHandlingTests
         _mockService = new Mock<IOrderService>();
         _provider = new ServiceCollection()
             .ConfigureMassTransit(x =>
-            {
-                var assembly = AppDomain.CurrentDomain.GetAssemblies()
-                            .Where(a => a.FullName.Contains("Choreography.Order"))
-                            .ToArray();
-
-                x.AddConsumers(assembly);
+            {       
+                x.AddConsumer<OrderCreateEventHandling>();
+                x.AddConsumer<InventoryGoodsBookedInWarehouseEventFailedHandling>();
             })
             .AddDbContext<OrderDbContext>(options =>
             {
                 options.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString());
             })
-            // .AddScoped<IOrderService, OrderServiceImplement>()
             .AddSingleton(_mockService.Object)
             .BuildServiceProvider(true);
 
@@ -80,22 +78,9 @@ public class OrderCreateEventHandlingTests
         var cartItems = new List<GoodViewModel>() { Good };
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
 
-        await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
+        await _harness.Bus.Publish(new OrderCreateEvent( orderId, UserId, cartItems, address));
 
         Assert.That(await _harness.Consumed.Any<OrderCreateEvent>(), "Message create order not consumed");
-
-        // using var scope = _provider.CreateScope();
-        // var _db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-        // var savedOrder = await _db.Orders.FirstOrDefaultAsync();
-        // Assert.That(savedOrder, Is.Not.Null);
-        // Assert.That(savedOrder.DeliveryAddress, Is.EqualTo(address));
-
-        // Assert.Multiple(() => 
-        // {
-        //     Assert.That(savedOrder, Is.Not.Null);
-        //     Assert.That(savedOrder.DeliveryAddress, Is.EqualTo(address));
-        // });
 
         Assert.That(await _harness.Published.Any<OrderCreateEventSuccess>(), Is.True);
     }
@@ -111,7 +96,7 @@ public class OrderCreateEventHandlingTests
             .Setup(x => x.InsertAsync(It.IsAny<OrderCreationModel>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Add to db failed"));
 
-        await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems, address));
 
         Assert.That(await _harness.Consumed.Any<OrderCreateEvent>(), Is.True);
 
@@ -122,7 +107,7 @@ public class OrderCreateEventHandlingTests
     [Test]
     public async Task Should_call_delete_async_when_inventory_failed_event_recived()
     {
-        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventFailed(Good.Id));
+        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventFailed(Good.Id, new List<GoodViewModel>{Good}));
 
         Assert.That(await _harness.Consumed.Any<InventoryGoodsBookedInWarehouseEventFailed>(), Is.True);
 

@@ -1,5 +1,5 @@
 namespace Shared.Contracts;
-public record OrderCreateEvent(Guid UserId, IEnumerable<GoodViewModel> CartItems, string Address);
+public record OrderCreateEvent(Guid OrderId, Guid UserId, IEnumerable<GoodViewModel> CartItems, string Address);
 
 public class GoodViewModel
 {

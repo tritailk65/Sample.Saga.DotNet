@@ -1,9 +1,8 @@
-using System.Net;
-using Choreography.Order.Models;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Shared;
 using Shared.Contracts;
+using Shared.Models;
+using Shared.Services.Order;
 
 namespace Choreography.Order.IntegrationEvent.EventHandling;
 
@@ -30,7 +29,7 @@ public class OrderCreateEventHandling(
         catch (Exception e)
         {
             logger.LogError($"[{nameof(OrderCreateEventHandling)}]. Message: {e.Message}");
-            await context.Publish(new OrderCreateEventFailed(orderId));
+            await context.Publish(new OrderCreateEventFailed(orderId, context.Message.CartItems));
             return;
         }
 

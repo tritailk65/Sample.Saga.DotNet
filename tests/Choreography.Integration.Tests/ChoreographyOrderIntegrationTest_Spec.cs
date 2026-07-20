@@ -68,10 +68,11 @@ public class OrderCreateIntegrationTest
     [Test]
     public async Task Should_publish_success_event_when_added_order_to_db()
     {
+        var orderId = NewId.NextGuid();
         var cartItems = new List<GoodViewModel>() { Good };
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
 
-        await _harness.Bus.Publish(new OrderCreateEvent( UserId, cartItems, address));
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems, address));
 
         Assert.That(await _harness.Consumed.Any<OrderCreateEvent>(), "Message create order not consumed");
 

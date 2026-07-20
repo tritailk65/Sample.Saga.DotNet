@@ -1,9 +1,10 @@
-using Choreography.Delivery.Services;
+using Choreography.Delivery.IntegrationEvent.EventHandling;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Shared.Contracts;
+using Shared.Services.Delivery.Services;
 
 namespace Choreography.Tests.NUnit;
 
@@ -23,19 +24,8 @@ public class DeliveryEventHandlingTesting
         _provider = new ServiceCollection()
             .ConfigureMassTransit(x =>
             {
-                var assembly = AppDomain.CurrentDomain.GetAssemblies()
-                            .Where(a => a.FullName.Contains("Choreography.Delivery"))
-                            .ToArray();
-
-                x.AddConsumers(assembly);
-
-                //x.AddConsumer<Choreography.Inventory.IntegrationeEvent.EventHandling.OrderCreateEventSuccessHandling>();
+                x.AddConsumer<InventoryGoodsBookedInWarehouseEventSuccessHandling>();
             })
-            // Uncomment this if need to test exit record in db
-            // .AddDbContext<ApplicationDbContext>(options =>
-            // {
-            //     options.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString());
-            // })
             .AddSingleton(_mockService.Object)
 
             .BuildServiceProvider(true);

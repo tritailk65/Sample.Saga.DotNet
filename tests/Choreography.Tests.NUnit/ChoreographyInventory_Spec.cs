@@ -1,9 +1,10 @@
-using Choreography.Inventory.Services;
+using Choreography.Inventory.IntegrationeEvent.EventHandling;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Shared.Contracts;
+using Shared.Services.Inventory.Services;
 
 
 namespace Choreography.Tests.NUnit;
@@ -25,21 +26,18 @@ public class InventoryEventHandlingTesting
         _provider = new ServiceCollection()
             .ConfigureMassTransit(x =>
             {
-                var assembly = AppDomain.CurrentDomain.GetAssemblies()
-                            .Where(a => a.FullName.Contains("Choreography.Inventory"))
-                            .ToArray();
+                // var assembly = AppDomain.CurrentDomain.GetAssemblies()
+                //             .Where(a => a.FullName.Contains("Choreography.Inventory"))
+                //             .ToArray();
 
-                x.AddConsumers(assembly);
+                // x.AddConsumers(assembly);
 
-                //x.AddConsumer<Choreography.Inventory.IntegrationeEvent.EventHandling.OrderCreateEventSuccessHandling>();
+                x.AddConsumer<OrderCreateEventSuccessHandling>();
+                x.AddConsumer<DeliverySendEventFailedHandling>();
             })
-            // .AddDbContext<ApplicationDbContext>(options =>
-            // {
-            //     options.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString());
-            // })
+
             .AddSingleton(_mockService.Object)
-            //.AddSingleton(Mock.Of<ILogger<OrderCreateEventSuccessHandling>>())
-            // .AddScoped<IInventoryService, InventoryServiceImplement>() 
+
             .BuildServiceProvider(true);
 
         _harness = _provider.GetTestHarness();
@@ -80,20 +78,6 @@ public class InventoryEventHandlingTesting
         var cartItems = new List<GoodViewModel>() {Good} ;
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
 
-        // Nhap kho
-        // using var scope = _provider.CreateScope();
-        // var _db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-        // var good = new Goods
-        // {
-        //     Id = Good.Id,
-        //     Name = Good.Name,
-        //     Count = Good.Count  
-        // };
-        // _db.Goods.Add(good);
-        // await _db.SaveChangesAsync();
-
-        // Không nên viết như này vì nó thuộc về integration test
 
         var availableGood = new Dictionary<Guid, bool>
         {

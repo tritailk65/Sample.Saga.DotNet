@@ -1,4 +1,13 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Orchestration.Delivery/Orchestration.Delivery.csproj" />
+    <Project Path="src/Orchestration.Inventory/Orchestration.Inventory.csproj" />
+    <Project Path="src/Orchestration.Order/Orchestration.Order.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Orchestration.Integration.Tests/Orchestration.Integration.Tests.csproj" />
+    <Project Path="tests/Orchestration.Tests.NUnit/Orchestration.Tests.NUnit.csproj" />
+  </Folder>
 
   <Project Path="src/Choreography.Delivery/Choreography.Delivery.csproj" />
   <Project Path="src/Choreography.Inventory/Choreography.Inventory.csproj" />

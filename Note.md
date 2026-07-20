@@ -87,8 +87,6 @@ dotnet new xunit -n MyProject.Tests -o tests/MyProject.Tests
 dotnet sln add src/MyProject.API/MyProject.API.csproj
 dotnet sln add tests/MyProject.Tests/MyProject.Tests.csproj
 
-
-
 ## Add migraiont by dot net ef
 .NET CLI
 dotnet ef migrations add InitialCreate --output-dir Your/Directory

@@ -1,7 +1,7 @@
-using Choreography.Inventory.Services;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Shared.Contracts;
+using Shared.Services.Inventory.Services;
 
 namespace Choreography.Inventory.IntegrationeEvent.EventHandling;
 
@@ -22,7 +22,7 @@ public class DeliverySendEventFailedHandling(
         catch
         {
             logger.LogInformation($"[{nameof(DeliverySendEventFailedHandling)}] Message: Fail to return goods on order by id {context.Message.OrderId}");
-            await context.Publish(new InventoryGoodsBookedInWarehouseEventFailed(context.Message.OrderId));
+            await context.Publish(new InventoryGoodsBookedInWarehouseEventFailed(context.Message.OrderId, context.Message.CartItems));
         }
             
     }

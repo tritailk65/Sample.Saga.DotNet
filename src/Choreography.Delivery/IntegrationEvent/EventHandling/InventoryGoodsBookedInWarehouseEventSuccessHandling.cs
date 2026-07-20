@@ -1,7 +1,7 @@
-using Choreography.Delivery.Services;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Shared.Contracts;
+using Shared.Services.Delivery.Services;
 
 namespace Choreography.Delivery.IntegrationEvent.EventHandling;
 
