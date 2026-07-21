@@ -1,6 +1,12 @@
 
+namespace Orchestration.Integration.Tests;
 
-namespace Choreography.Integration.Tests;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
 public class MigrationHostedService<TDbContext> :
     IHostedService
     where TDbContext : DbContext

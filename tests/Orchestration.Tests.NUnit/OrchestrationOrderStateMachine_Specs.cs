@@ -60,8 +60,8 @@ public class When_order_is_added
 
         await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems,address));
         Assert.That(await _harness.Consumed.Any<OrderCreateEvent>(), Is.True, "Message not consumed");
-
         var sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderSaga>();
+
 
         Assert.That(await sagaHarness.Consumed.Any<OrderCreateEvent>(), "Message not consumed by saga");
 

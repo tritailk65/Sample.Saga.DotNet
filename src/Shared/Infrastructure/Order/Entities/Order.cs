@@ -4,8 +4,6 @@ namespace Shared.Infrastructure.Order.Infrastructure.Entities;
 using Shared.Infrastructure.Order.Infrastructure.Enums;
 
 
-
-
 public class Order
 {
     public required Guid Id { get; init; }

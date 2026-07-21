@@ -1,7 +1,7 @@
-using MassTransit;
-using Shared.Contracts;
 
 namespace Shared.StateMachines;
+using MassTransit;
+using Shared.Contracts;
 
 public class OrderSaga : SagaStateMachineInstance
 {
@@ -13,6 +13,7 @@ public class OrderSaga : SagaStateMachineInstance
     // State
     public Guid CorrelationId { get; set; }
     public string CurrentState { get; set; } = null!;
+    public int Version { get; set; }
     
     // Audit info
     public DateTime CreatedAt { get; set; }
