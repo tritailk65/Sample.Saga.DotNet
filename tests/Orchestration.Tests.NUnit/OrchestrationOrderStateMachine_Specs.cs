@@ -50,22 +50,12 @@ public class When_order_is_added
     };
     #endregion
 
+    #region State Machine Unit test
     [Test]
     public async Task Should_create_a_saga_instance()
     {
         var cartItems = new List<GoodViewModel>() { Good };
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
-
-        await using var provider = new ServiceCollection()
-            .ConfigureMassTransit(x =>
-            {
-                x.AddSagaStateMachine<OrderStateMachine, OrderSaga>();
-            })
-            .BuildServiceProvider(true);
-
-        var _harness = provider.GetTestHarness();
-        await _harness.Start();
-
         var orderId = NewId.NextGuid();
 
         await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems,address));
@@ -82,41 +72,174 @@ public class When_order_is_added
 
         Guid? existsId = await sagaHarness.Exists(orderId, x => x.OrderCreated);
         Assert.That(existsId.HasValue, Is.True, "Saga did not exist");
-
     }
 
+    [Test]
     public async Task Should_change_state_to_BookingGoodsInWarehouse_when_order_added_success()
     {
         var cartItems = new List<GoodViewModel>() { Good };
         var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
-
-        await using var provider = new ServiceCollection()
-            .ConfigureMassTransit(x =>
-            {
-                x.AddSagaStateMachine<OrderStateMachine, OrderSaga>();
-            })
-            .BuildServiceProvider(true);
-
-        var _harness = provider.GetTestHarness();
-        await _harness.Start();
-
         var orderId = NewId.NextGuid();
 
         await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems,address));
 
         var sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderSaga>();
 
-        Guid? existsId = await sagaHarness.Exists(orderId, x => x.OrderCreated);
-        Assert.That(existsId.HasValue, Is.True, "Saga did not exist");
+        await _harness.Bus.Publish(new OrderCreateEventSuccess(orderId, UserId, cartItems, address));
+
+        Assert.That(await _harness.Published.Any<InventoryGoodsBookedInWarehouseEvent>(), Is.True);
+
+        Guid? existsId = await sagaHarness.Exists(orderId, x => x.BookingGoodsInWarehouse);
+        Assert.That(existsId.HasValue, Is.True, "Saga was not change to BookingGoodsInWarehouse");
+
+    }
+
+    [Test]
+    public async Task Should_change_state_to_DeliverySend_when_goods_booked_success()
+    {
+        var cartItems = new List<GoodViewModel>() { Good };
+        var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
+        var orderId = NewId.NextGuid();
+
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems,address));
+        var sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderSaga>();
+
+        await _harness.Bus.Publish(new OrderCreateEventSuccess(orderId, UserId, cartItems, address));
+        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventSuccess(orderId, UserId, cartItems, address));
+
+        Assert.That(await _harness.Published.Any<DeliverySendEvent>(), Is.True);
+
+        Guid? existsId = await sagaHarness.Exists(orderId, x => x.DeliverySend);
+        Assert.That(existsId.HasValue, Is.True, "Saga was not change to DeliverySend");
+
+    }
+
+    [Test]
+    public async Task Should_change_state_to_Rejected_when_goods_is_not_enough()
+    {
+        var cartItems = new List<GoodViewModel>() { Good };
+        var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
+        var orderId = NewId.NextGuid();
+
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems,address));
+        var sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderSaga>();
 
         await _harness.Bus.Publish(new OrderCreateEventSuccess(orderId, UserId, cartItems, address));
 
-        existsId = await sagaHarness.Exists(orderId, x => x.BookingGoodsInWarehouse);
-        Assert.That(existsId.HasValue, Is.True, "Saga was not change to BookingGoodsInWarehouse");
+        await _harness.Bus.Publish(new InventoryGoodsBookedRejectedEvent(orderId, cartItems.ToDictionary(m => m.Id, m => m.Count)));
 
-        Assert.That(await _harness.Published.Any<InventoryGoodsBookedInWarehouseEvent>(), Is.True);
+        Guid? existsId = await sagaHarness.Exists(orderId, x => x.Rejected);
+        Assert.That(existsId.HasValue, Is.True, "Saga was not change to Rejected");
     }
 
+    [Test]
+    public async Task Should_change_state_to_Canceled_when_delivery_send_failed()
+    {
+        var cartItems = new List<GoodViewModel>() { Good };
+        var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
+        var orderId = NewId.NextGuid();
+
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems,address));
+        var sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderSaga>();
+
+        await _harness.Bus.Publish(new OrderCreateEventSuccess(orderId, UserId, cartItems, address));
+
+        Assert.That(await _harness.Published.Any<OrderCreateEventSuccess>(), Is.True);
+        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEvent(orderId, UserId, cartItems,address));
+
+        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventSuccess(orderId, UserId, cartItems, address));
+
+        await _harness.Bus.Publish(new DeliverySendEventFailed(orderId, cartItems));
+        Assert.That(await _harness.Published.Any<InventoryGoodsRestoredEvent>(), Is.True);
+        Assert.That(await _harness.Published.Any<OrderCancelEvent>(), Is.True);
+
+        Guid? existsId = await sagaHarness.Exists(orderId, x => x.Canceled);
+        Assert.That(existsId.HasValue, Is.True, "Saga was not change to Canceled");
+    }
+
+    [Test]
+    public async Task Should_change_state_to_Failed_when_error_occurred_in_cancel_order()
+    {
+        var cartItems = new List<GoodViewModel>() { Good };
+        var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
+        var orderId = NewId.NextGuid();
+
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems,address));
+        var sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderSaga>();
+
+        await _harness.Bus.Publish(new OrderCreateEventSuccess(orderId, UserId, cartItems, address));
+        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventFailed(orderId, cartItems));
+
+        Assert.That((await _sagaHarness.Exists(orderId, x => x.Canceled)).HasValue, Is.True, "Saga must be in Canceled state first");
+
+        await _harness.Bus.Publish<Fault<OrderCancelEvent>>(new
+        {
+
+            Message = new OrderCancelEvent(orderId),
+            
+            Timestamp = DateTime.UtcNow,
+
+            Exceptions = new[] 
+            { 
+                new 
+                { 
+                    ExceptionType = "System.TimeoutException", 
+                    Message = "Simulated DB Timeout during Order Cancellation" 
+                } 
+            }
+        });
+
+        Assert.That(await _sagaHarness.Consumed.Any<Fault<OrderCancelEvent>>(), Is.True, "Saga did not consume the Fault event");
+
+        Guid? existsId = await sagaHarness.Exists(orderId, x => x.Failed);
+        Assert.That(existsId.HasValue, Is.True, "Saga was not change to Failed");
+    }
+
+    public async Task Should_change_stage_to_Failed_when_error_occurred_in_goods_restored()
+    {
+        var cartItems = new List<GoodViewModel>() { Good };
+        var address = "7811 NE Pleasant Valley RdLiberty, Missouri(MO), 64068";
+        var orderId = NewId.NextGuid();
+
+        await _harness.Bus.Publish(new OrderCreateEvent(orderId, UserId, cartItems,address));
+        var sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderSaga>();
+
+        await _harness.Bus.Publish(new OrderCreateEventSuccess(orderId, UserId, cartItems, address));
+        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEvent(orderId, UserId, cartItems,address));
+
+        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEvent(orderId, UserId, cartItems,address));
+        await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventSuccess(orderId, UserId, cartItems, address));
+        await _harness.Bus.Publish(new DeliverySendEventFailed(orderId, cartItems));
+
+        Assert.That((await _sagaHarness.Exists(orderId, x => x.Canceled)).HasValue, Is.True, "Saga must be in Canceled state first");
+
+        Assert.That(await _harness.Published.Any<OrderCancelEvent>(), Is.True);
+
+        await _harness.Bus.Publish<Fault<InventoryGoodsRestoredEvent>>(new
+        {
+
+            Message = new InventoryGoodsRestoredEvent(orderId, cartItems.ToDictionary(m => m.Id, m => m.Count)),
+            
+            Timestamp = DateTime.UtcNow,
+
+            Exceptions = new[] 
+            { 
+                new 
+                { 
+                    ExceptionType = "System.TimeoutException", 
+                    Message = "Simulated DB Timeout during goods return" 
+                } 
+            }
+        });
+
+        Assert.That(await _sagaHarness.Consumed.Any<Fault<OrderCancelEvent>>(), Is.True, "Saga did not consume the Fault event");
+
+        Guid? existsId = await sagaHarness.Exists(orderId, x => x.Failed);
+        Assert.That(existsId.HasValue, Is.True, "Saga was not change to Failed");
+    }
+
+    #endregion
+    
     #region 1. Happy Path
     
     [Test]
@@ -157,7 +280,7 @@ public class When_order_is_added
         await _harness.Bus.Publish(new OrderCreateEventFailed(orderId, cartItems));
 
         Assert.That(await _harness.Published.Any<OrderCancelEvent>(), Is.True);
-        Assert.That((await _sagaHarness.Exists(orderId, x => x.Failed)).HasValue, Is.True);
+        Assert.That((await _sagaHarness.Exists(orderId, x => x.Canceled)).HasValue, Is.True);
     }
 
     [Test]
@@ -174,7 +297,7 @@ public class When_order_is_added
         await _harness.Bus.Publish(new InventoryGoodsBookedInWarehouseEventFailed(orderId, cartItems));
 
         Assert.That(await _harness.Published.Any<OrderCancelEvent>(), Is.True);
-        Assert.That((await _sagaHarness.Exists(orderId, x => x.Failed)).HasValue, Is.True);
+        Assert.That((await _sagaHarness.Exists(orderId, x => x.Canceled)).HasValue, Is.True);
     }
 
     [Test]
@@ -191,10 +314,10 @@ public class When_order_is_added
 
         await _harness.Bus.Publish(new DeliverySendEventFailed(orderId, cartItems));
 
-        Assert.That(await _harness.Published.Any<InventoryGoodsRestoredEvent>(), Is.True, "Phải hoàn lại kho");
-        Assert.That(await _harness.Published.Any<OrderCancelEvent>(), Is.True, "Phải huỷ đơn hàng");
+        Assert.That(await _harness.Published.Any<InventoryGoodsRestoredEvent>(), Is.True, "Must return goods to warehouse");
+        Assert.That(await _harness.Published.Any<OrderCancelEvent>(), Is.True, "Must cancel the order");
 
-        Assert.That((await _sagaHarness.Exists(orderId, x => x.Failed)).HasValue, Is.True);
+        Assert.That((await _sagaHarness.Exists(orderId, x => x.Canceled)).HasValue, Is.True);
     }
 
     #endregion

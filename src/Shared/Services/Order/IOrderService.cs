@@ -9,4 +9,5 @@ public interface IOrderService
     Task DeleteAsync(Guid orderId, CancellationToken cancellationToken = default);
     Task UpdateStatusCancel(Guid orderId, CancellationToken cancellationToken = default);
     Task UpdateStatusComplete(Guid orderId, CancellationToken cancellationToken = default);
+    Task UpdateStatusRejected(Guid orderId, CancellationToken cancellationToken = default);
 }

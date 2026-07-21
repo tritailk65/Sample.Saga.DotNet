@@ -1,12 +1,34 @@
 ### About this project
 
 ## Overview
-- Demonstrates how to implement the Saga pattern in .NET Core using the MassTransit library.
+- Demonstrates how to implement the Saga pattern in .NET Core using MassTransit library.
 - Covers two types of sagas: Choreography and Orchestration, which resolve distributed transaction challenges in a microservices architecture.
 
 ## Versions
 - **.NET Target Framework:** .NET 8.0
 - **MassTransit:** Version 8.4.1
+
+## How to run 
+1. Clone this repository and navigate to the project directory:
+```bash
+git clone https://github.com/tritailk65/Sample.Saga.DotNet.git
+cd Sample.Saga.Dotnet
+```
+
+2. Open the project with Visual Studio, Visual Studio Code, or your preferred IDE.
+
+Start Docker Desktop (required for integration tests with a real database), then run:
+
+```script
+cd tests/Choreography.Integration.Tests
+docker compose up -d
+```
+
+3. Build the project and run the tests:
+```script
+dotnet build
+dotnet test
+```
 
 ## Choreography flow (sequence diagram)
 
@@ -67,26 +89,68 @@ sequenceDiagram
     end
 ```
 
-## How to run 
-1. Clone this repository and navigate to the project directory:
-```bash
-git clone https://github.com/tritailk65/Sample.Saga.DotNet.git
-cd Sample.Saga.Dotnet
+## Orchestration flow (sequence diagram)
+```mermaid
+sequenceDiagram
+    autonumber
+
+    participant Saga as OrderSaga (State Machine)
+    
+    participant OS as Order Service
+    participant IS as Inventory Service
+    participant DS as Delivery Service
+
+    Note over Saga: State: Initial
+
+    OS-->>Saga: [Event] OrderCreateEvent
+    Saga->>Saga: InitializeSaga (Copy data)
+    Note over Saga: State: OrderCreated
+
+    alt Happy Path (Order creation successful)
+        OS-->>Saga: [Event] OrderCreateEventSuccess
+        Saga-->>IS: [Command] InventoryGoodsBookedInWarehouseEvent
+        Note over Saga: State: BookingGoodsInWarehouse
+
+        alt Happy Path (Inventory deduction successful)
+            IS-->>Saga: [Event] InventoryGoodsBookedInWarehouseEventSuccess
+            Saga-->>DS: [Command] DeliverySendEvent
+            Note over Saga: State: DeliverySend
+
+            alt Happy Path (Delivery successful)
+                DS-->>Saga: [Event] DeliverySendEventSuccess
+                Note over Saga: State: Final (Completed)
+                
+            else Delivery Technical Error (Sad Path)
+                DS-->>Saga: [Event] DeliverySendEventFailed
+                Note right of Saga: Start compensating transactions
+                Saga-->>IS: [Event] InventoryGoodsRestoredEvent (Restore inventory)
+                Saga-->>OS: [Event] OrderCancelEvent (Cancel order)
+                Note over Saga: State: Canceled
+            end
+
+        else Business Error (Out of stock - Business Sad Path)
+            IS-->>Saga: [Event] InventoryGoodsBookedRejectedEvent
+            Note over Saga: State: Rejected
+            
+        else Inventory Technical Error (DB Timeout - Tech Sad Path)
+            IS-->>Saga: [Event] InventoryGoodsBookedInWarehouseEventFailed
+            Saga-->>OS: [Event] OrderCancelEvent (Cancel order)
+            Note over Saga: State: Canceled
+        end
+
+    else Order Creation Error
+        OS-->>Saga: [Event] OrderCreateEventFailed
+        Saga-->>OS: [Event] OrderCancelEvent
+        Note over Saga: State: Canceled
+    end
+
+    opt Error during Compensation (Compensation Failure)
+        Note over OS, Saga: In Canceled/Rejected state but Consumer encounters Code/DB error
+        OS--xSaga: [Event] Fault<OrderCancelEvent>
+        Note right of Saga: LogCritical to alert Admin
+        Note over Saga: State: Failed
+    end
 ```
 
-2. Open the project with Visual Studio, Visual Studio Code, or your preferred IDE.
-
-Start Docker Desktop (required for integration tests with a real database), then run:
-
-```script
-cd tests/Choreography.Integration.Tests
-docker compose up -d
-```
-
-3. Build the project and run the tests:
-```script
-dotnet build
-dotnet test
-```
 
 

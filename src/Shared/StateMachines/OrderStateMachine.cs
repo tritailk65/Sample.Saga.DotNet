@@ -11,6 +11,8 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
     public State BookingGoodsInWarehouse { get; private set; } = null!;
     public State DeliverySend { get; private set; } = null!;
     public State Failed { get; private set; } = null!;
+    public State Canceled { get; private set; } = null!;
+    public State Rejected { get; private set; } = null!;
 
     private Event<OrderCreateEvent> OnSagaStarted { get; set; } = null!;
     private Event<InventoryGoodsBookedInWarehouseEventSuccess> OnGoodsBookedInWarehouseSuccess { get; set; } = null!;
@@ -19,6 +21,11 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
     private Event<OrderCreateEventFailed> OnOrderCreateFailed { get; set; } = null!;
     private Event<DeliverySendEventSuccess> OnDeliverySendEventSuccess { get; set; } = null!;
     private Event<DeliverySendEventFailed> OnDeliverySendEventFailed { get; set; } = null!;
+    private Event<InventoryGoodsBookedRejectedEvent> OnGoodsBookedRejected { get; set;} = null!;
+
+    // Fault 
+    private Event<Fault<OrderCancelEvent>> OnCancelOrderFault { get; set;} = null!;
+    private Event<Fault<InventoryGoodsBookedRejectedEvent>> OnRejectOrderFault {get; set;} = null!;
 
     public OrderStateMachine(ILogger<OrderStateMachine> logger)
     {
@@ -33,6 +40,11 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
         Event(() => OnOrderCreateFailed, context => context.CorrelateById(x => x.Message.OrderId));
         Event(() => OnDeliverySendEventSuccess, context => context.CorrelateById(x => x.Message.OrderId));
         Event(() => OnDeliverySendEventFailed, context => context.CorrelateById(x => x.Message.OrderId));
+        Event(() => OnGoodsBookedRejected, context => context.CorrelateById(x => x.Message.OrderId));
+
+        // Map correlation for fault state
+        Event(() => OnCancelOrderFault, x => x.CorrelateById(context => context.Message.Message.OrderId));
+        Event(() => OnRejectOrderFault, x => x.CorrelateById(context => context.Message.Message.OrderId));
 
         Initially(WhenSagaStarted());
 
@@ -41,17 +53,19 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
                 .Publish(context => new InventoryGoodsBookedInWarehouseEvent(context.Message.OrderId, context.Message.UserId, context.Message.CartItems, context.Message.Address))                
                 .TransitionTo(BookingGoodsInWarehouse),
             When(OnOrderCreateFailed)
-                .Publish(context => new OrderCancelEvent(context.CorrelationId!.Value))
-                .TransitionTo(Failed)
+                .Publish(context => new OrderCancelEvent(context.Message.OrderId))
+                .TransitionTo(Canceled)
         );
 
         During(BookingGoodsInWarehouse,
             When(OnGoodsBookedInWarehouseSuccess)
                 .Publish(context => new DeliverySendEvent(context.Message.OrderId, context.Message.CartItems, context.Message.UserId, context.Message.Address))
                 .TransitionTo(DeliverySend),
+            When(OnGoodsBookedRejected)
+                .TransitionTo(Rejected),
             When(OnGoodsBookedInWarehouseFailed)
-                .Publish(context => new OrderCancelEvent(context.CorrelationId!.Value))
-                .TransitionTo(Failed)    
+                .Publish(context => new OrderCancelEvent(context.Message.OrderId))
+                .TransitionTo(Canceled)    
         );
 
         During(DeliverySend,
@@ -59,16 +73,19 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
                 .TransitionTo(Final),
             When(OnDeliverySendEventFailed)
                 .Publish(context => new InventoryGoodsRestoredEvent(context.CorrelationId!.Value, context.Saga.Goods.ToDictionary(id => id.Id, model => model.Count)))
-                .Publish(context => new OrderCancelEvent(context.CorrelationId!.Value))
-                .TransitionTo(Failed)
+                .Publish(context => new OrderCancelEvent(context.Message.OrderId))
+                .TransitionTo(Canceled)
         );
 
-        // DuringAny(
-        //     When(OnDeliverySendEventFailed)
-        //         .Publish(context => new InventoryGoodsRestoredEvent(context.CorrelationId!.Value, context.Saga.Goods.ToDictionary(id => id.Id, model => model.Count)))
-        //         .Publish(context => new OrderCancelEvent(context.CorrelationId!.Value))
-        //         .TransitionTo(Failed)
-        // );
+        During(Rejected, Canceled,
+            When(OnRejectOrderFault)
+                //Log critial error
+                .Then(LogSagaState)
+                .TransitionTo(Failed),
+            When(OnCancelOrderFault)
+                .Then(LogSagaState)
+                .TransitionTo(Failed)
+        );
         
     }
 
@@ -90,21 +107,10 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
         context.Saga.CreatedAt = DateTime.UtcNow;
     }
 
-}
+    private void LogSagaState<TEvent>(BehaviorContext<OrderSaga, TEvent> context) where TEvent : class
+    {
+        _logger.LogCritical($"{nameof(OrderSaga)} | correlationId: {context.Saga.CorrelationId} | event: {context.Event.Name}");
+        context.Saga.UpdateAt = DateTime.UtcNow;
+    }
 
-    // public static class OrderStateMachineExtension
-    // {
-    //     public static EventActivityBinder<OrderSaga, OrderCreateEvent> CopyDataToInstance(this EventActivityBinder<OrderSaga, OrderCreateEvent> binder)
-    //     {
-    //         return binder.Then(x =>
-    //         {
-    //             x.Saga.Goods = x.Message.CartItems;
-    //             x.Saga.DeliveryAddress = x.Message.Address;
-    //             x.Saga.CorrelationId = x.Message.OrderId;
-    //             x.Saga.UserId = x.Message.UserId;
-    //             x.Saga.RequestId = x.RequestId;
-    //             x.Saga.ResponseAddress = x.ResponseAddress;
-    //             x.Saga.CreatedAt = DateTime.UtcNow;
-    //         });
-    //     }
-    // }
+}

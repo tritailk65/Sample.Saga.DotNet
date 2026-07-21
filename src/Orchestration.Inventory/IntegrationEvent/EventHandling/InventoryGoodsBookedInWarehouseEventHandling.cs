@@ -1,4 +1,4 @@
-namespace Orchestration.Inventory.IntegrationEvent.EvnetHandling;
+namespace Orchestration.Inventory.IntegrationEvent.EventHandling;
 
 using MassTransit;
 using Microsoft.Extensions.Logging;
