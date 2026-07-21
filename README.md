@@ -20,7 +20,6 @@ cd Sample.Saga.Dotnet
 Start Docker Desktop (required for integration tests with a real database), then run:
 
 ```script
-cd tests/Choreography.Integration.Tests
 docker compose up -d
 ```
 
