@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Shared.Contracts;
@@ -26,6 +27,7 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
     // Fault 
     private Event<Fault<OrderCancelEvent>> OnCancelOrderFault { get; set;} = null!;
     private Event<Fault<InventoryGoodsBookedRejectedEvent>> OnRejectOrderFault {get; set;} = null!;
+    private Event<Fault<InventoryGoodsRestoredEvent>> OnRestoreFault {get; set; } = null!;
 
     public OrderStateMachine(ILogger<OrderStateMachine> logger)
     {
@@ -45,11 +47,14 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
         // Map correlation for fault state
         Event(() => OnCancelOrderFault, x => x.CorrelateById(context => context.Message.Message.OrderId));
         Event(() => OnRejectOrderFault, x => x.CorrelateById(context => context.Message.Message.OrderId));
+        Event(() => OnRestoreFault, x => x.CorrelateById(context => context.Message.Message.OrderId));
+        
 
         Initially(WhenSagaStarted());
 
         During(OrderCreated,
             When(OnOrderCreateSuccess)
+                .Then(LogSagaState)
                 .Publish(context => new InventoryGoodsBookedInWarehouseEvent(context.Message.OrderId, context.Message.UserId, context.Message.CartItems, context.Message.Address))                
                 .TransitionTo(BookingGoodsInWarehouse),
             When(OnOrderCreateFailed)
@@ -59,19 +64,24 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
 
         During(BookingGoodsInWarehouse,
             When(OnGoodsBookedInWarehouseSuccess)
+                .Then(LogSagaState)
                 .Publish(context => new DeliverySendEvent(context.Message.OrderId, context.Message.CartItems, context.Message.UserId, context.Message.Address))
                 .TransitionTo(DeliverySend),
             When(OnGoodsBookedRejected)
+                .Then(LogSagaState)
                 .TransitionTo(Rejected),
             When(OnGoodsBookedInWarehouseFailed)
+                .Then(LogSagaState)
                 .Publish(context => new OrderCancelEvent(context.Message.OrderId))
                 .TransitionTo(Canceled)    
         );
 
         During(DeliverySend,
             When(OnDeliverySendEventSuccess)
+                .Then(LogSagaState)
                 .TransitionTo(Final),
             When(OnDeliverySendEventFailed)
+                .Then(LogSagaState)
                 .Publish(context => new InventoryGoodsRestoredEvent(context.CorrelationId!.Value, context.Saga.Goods.ToDictionary(id => id.Id, model => model.Count)))
                 .Publish(context => new OrderCancelEvent(context.Message.OrderId))
                 .TransitionTo(Canceled)
@@ -79,10 +89,12 @@ public sealed class OrderStateMachine : MassTransitStateMachine<OrderSaga>
 
         During(Rejected, Canceled,
             When(OnRejectOrderFault)
-                //Log critial error
                 .Then(LogSagaState)
                 .TransitionTo(Failed),
             When(OnCancelOrderFault)
+                .Then(LogSagaState)
+                .TransitionTo(Failed),
+            When(OnRestoreFault)
                 .Then(LogSagaState)
                 .TransitionTo(Failed)
         );

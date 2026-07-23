@@ -35,6 +35,24 @@ public class ChoreographyE2ETest()
         await _harness.Start();
     }
 
+    private async Task InitializeDatabasesAsync()
+    {
+        using var scope = _provider.CreateScope();
+        var orderDb = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+        
+        await orderDb.Database.EnsureDeletedAsync(); 
+        await orderDb.Database.MigrateAsync(); 
+
+        var iDb = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+        await iDb.Database.EnsureDeletedAsync();
+        await iDb.Database.MigrateAsync();
+
+        var dDb = scope.ServiceProvider.GetRequiredService<DeliveryDbContext>();
+        await dDb.Database.EnsureDeletedAsync();
+        await dDb.Database.MigrateAsync();
+    }
+
+
     [TearDown]
     public async Task TearDown()
     {
@@ -62,22 +80,6 @@ public class ChoreographyE2ETest()
     };
     #endregion
 
-    private async Task InitializeDatabasesAsync()
-    {
-        using var scope = _provider.CreateScope();
-        var orderDb = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
-        
-        await orderDb.Database.EnsureDeletedAsync(); 
-        await orderDb.Database.MigrateAsync(); 
-
-        var iDb = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
-        await iDb.Database.EnsureDeletedAsync();
-        await iDb.Database.MigrateAsync();
-
-        var dDb = scope.ServiceProvider.GetRequiredService<DeliveryDbContext>();
-        await dDb.Database.EnsureDeletedAsync();
-        await dDb.Database.MigrateAsync();
-    }
 
     [Test]
     public async Task E2E_Choreography_HappyPath_Should_Process_Order_And_Deduct_Inventory()

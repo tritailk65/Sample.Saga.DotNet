@@ -6,7 +6,7 @@ public class OrderCreateEventHandling(
 {
     public async Task Consume(ConsumeContext<OrderCreateEvent> context)
     {
-        var orderId = Guid.NewGuid();
+        var orderId = context.Message.OrderId;
 
         var orderCreationModel = new OrderCreationModel
         {

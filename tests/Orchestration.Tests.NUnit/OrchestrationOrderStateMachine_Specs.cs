@@ -195,6 +195,7 @@ public class When_order_is_added
         Assert.That(existsId.HasValue, Is.True, "Saga was not change to Failed");
     }
 
+    [Test]
     public async Task Should_change_stage_to_Failed_when_error_occurred_in_goods_restored()
     {
         var cartItems = new List<GoodViewModel>() { Good };
@@ -232,7 +233,7 @@ public class When_order_is_added
             }
         });
 
-        Assert.That(await _sagaHarness.Consumed.Any<Fault<OrderCancelEvent>>(), Is.True, "Saga did not consume the Fault event");
+        Assert.That(await _sagaHarness.Consumed.Any<Fault<InventoryGoodsRestoredEvent>>(), Is.True, "Saga did not consume the Fault event");
 
         Guid? existsId = await sagaHarness.Exists(orderId, x => x.Failed);
         Assert.That(existsId.HasValue, Is.True, "Saga was not change to Failed");

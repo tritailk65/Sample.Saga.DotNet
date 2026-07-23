@@ -3,16 +3,17 @@
     <Project Path="src/Orchestration.Delivery/Orchestration.Delivery.csproj" />
     <Project Path="src/Orchestration.Inventory/Orchestration.Inventory.csproj" />
     <Project Path="src/Orchestration.Order/Orchestration.Order.csproj" />
+    <Project Path="src/Choreography.Delivery/Choreography.Delivery.csproj" />
+    <Project Path="src/Choreography.Inventory/Choreography.Inventory.csproj" />
+    <Project Path="src/Choreography.Order/Choreography.Order.csproj" />
+    <Project Path="src/Shared/Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Orchestration.Integration.Tests/Orchestration.Integration.Tests.csproj" />
     <Project Path="tests/Orchestration.Tests.NUnit/Orchestration.Tests.NUnit.csproj" />
+    <Project Path="tests/Choreography.Tests.NUnit/Choreography.Tests.NUnit.csproj" />
+    <Project Path="tests/Choreography.Integration.Tests/Choreography.Integration.Tests.csproj" />
   </Folder>
 
-  <Project Path="src/Choreography.Delivery/Choreography.Delivery.csproj" />
-  <Project Path="src/Choreography.Inventory/Choreography.Inventory.csproj" />
-  <Project Path="src/Choreography.Order/Choreography.Order.csproj" />
-  <Project Path="tests/Choreography.Tests.NUnit/Choreography.Tests.NUnit.csproj" />
-  <Project Path="tests/Choreography.Integration.Tests/Choreography.Integration.Tests.csproj" />
-  <Project Path="src/Shared/Shared.csproj" />
+
 </Solution>

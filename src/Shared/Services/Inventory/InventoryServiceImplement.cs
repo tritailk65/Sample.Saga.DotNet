@@ -7,7 +7,6 @@ using Shared.Infrastructure.Inventory.Infrastructure.Entities;
 public class InventoryServiceImplement(InventoryDbContext dbContext) : IInventoryService
 {
 
-    // Check tồn kho
     public async Task<Dictionary<Guid, bool>> CheckAvailabilityAsync(IEnumerable<Guid> goodIds, CancellationToken cancellationToken = default)
     {
         var goods = await dbContext.Goods
@@ -23,7 +22,6 @@ public class InventoryServiceImplement(InventoryDbContext dbContext) : IInventor
             id => goods.TryGetValue(id, out var isAvailable) && isAvailable);
     }
 
-    // Trừ tồn kho, ném lỗi không đủ tồn kho nếu vượt quá số lượng
     public async Task BookGoodsAsync(Dictionary<Guid, int> goodDictionary, CancellationToken cancellationToken = default)
     {
         var ids = goodDictionary.Select(s => s.Key);

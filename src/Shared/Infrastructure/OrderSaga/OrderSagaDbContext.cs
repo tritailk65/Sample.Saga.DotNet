@@ -3,10 +3,11 @@ namespace Shared.Infrastructure.OrderSaga;
 using MassTransit.EntityFrameworkCoreIntegration;
 using Microsoft.EntityFrameworkCore;
 using Shared.StateMachines;
+using Shared.Infrastructure.Order.Infrastructure.Entities;
 
 public class OrderSagaDbContext : SagaDbContext
 {
-    public DbSet<OrderSaga> Orders { get; set; }
+    public DbSet<Order> Orders { get; set; }
 
     // For Unit-test
     public OrderSagaDbContext(DbContextOptions<OrderSagaDbContext> options) : base(options)

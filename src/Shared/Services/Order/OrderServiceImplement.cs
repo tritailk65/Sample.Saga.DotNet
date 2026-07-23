@@ -9,6 +9,7 @@ using Shared.Infrastructure.Order.Infrastructure.Enums;
 
 public class OrderServiceImplement(OrderDbContext dbContext) : IOrderService
 {
+
     // Insert Order to db
     public async Task InsertAsync(OrderCreationModel creationModel, Guid? orderId = null, CancellationToken cancellationToken = default)
     {    

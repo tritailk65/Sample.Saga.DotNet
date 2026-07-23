@@ -24,6 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Orchestration.Delivery\Orchestration.Delivery.csproj" />
+    <ProjectReference Include="..\..\src\Orchestration.Inventory\Orchestration.Inventory.csproj" />
+    <ProjectReference Include="..\..\src\Orchestration.Order\Orchestration.Order.csproj" />
     <ProjectReference Include="..\..\src\Shared\Shared.csproj" />
   </ItemGroup>
 

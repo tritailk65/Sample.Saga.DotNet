@@ -20,13 +20,20 @@ public class InventoryGoodsBookedInWarehouseEventHandling (
             ValidateGoodsAvailability(context.Message.CartItems, availabilityGoods);
             await inventoryService.BookGoodsAsync(context.Message.CartItems.ToDictionary(x => x.Id, i => i.Count), context.CancellationToken);    
         }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogError($"[{nameof(InventoryGoodsBookedInWarehouseEventHandling)}]. Message: Out of stock, publish event InventoryGoodsBookedRejectedEvent. OrderId: {ex.Message}");
+
+            await context.Publish(new InventoryGoodsBookedRejectedEvent(context.Message.OrderId, context.Message.CartItems.ToDictionary(x => x.Id, x => x.Count)));
+            return;
+        }
         catch (Exception e)
         {
             logger.LogError($"[{nameof(InventoryGoodsBookedInWarehouseEventHandling)}]. Message: Goods booked by orderId fail {e.Message}");
 
             await context.Publish(new InventoryGoodsBookedInWarehouseEventFailed(context.Message.OrderId, context.Message.CartItems));
             return;
-        }
+        } 
 
         //publish add iventory success
         await context.Publish(new InventoryGoodsBookedInWarehouseEventSuccess(context.Message.OrderId, context.Message.UserId, context.Message.CartItems, context.Message.Address));

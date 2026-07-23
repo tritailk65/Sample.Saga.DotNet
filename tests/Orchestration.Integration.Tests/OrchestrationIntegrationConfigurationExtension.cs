@@ -2,6 +2,7 @@ using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.Infrastructure.Delivery.Infrastructure;
 using Shared.Infrastructure.Inventory.Infrastructure;
+using Shared.Infrastructure.Order.Infrastructure;
 using Shared.Infrastructure.OrderSaga;
 
 namespace Orchestration.Integration.Tests;
@@ -9,12 +10,16 @@ namespace Orchestration.Integration.Tests;
 
 public static class OrchestrationIntegrationConfigurationExtensions
 {
-    public static IServiceCollection ConfigureMassTransit(this IServiceCollection services, Action<IBusRegistrationConfigurator>? configure = null)
+    public static IServiceCollection ConfigureMassTransit(this IServiceCollection services, Action<IBusRegistrationConfigurator> configure = null)
     {
         services
             .AddDbContext<OrderSagaDbContext>(options =>
             {
                 ApplicationDbContextFactory<OrderSagaDbContext>.Apply(options);
+            })
+            .AddDbContext<OrderDbContext>(options =>
+            {
+                ApplicationDbContextFactory<OrderDbContext>.Apply(options);
             })
             .AddDbContext<InventoryDbContext>(options =>
             {
@@ -53,5 +58,9 @@ public class InventoryDbContextFactory : ApplicationDbContextFactory<InventoryDb
 }
 
 public class OrderSagaDbContextFactory : ApplicationDbContextFactory<OrderSagaDbContext>
+{
+}
+
+public class OrderDbContextFactory : ApplicationDbContextFactory<OrderDbContext>
 {
 }

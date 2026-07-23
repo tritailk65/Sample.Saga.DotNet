@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Orchestration.Integration.Tests.Migrations
 {
     /// <inheritdoc />
-    public partial class OrderDb_InitalCreate : Migration
+    public partial class OrderDb_InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,10 +16,28 @@ namespace Orchestration.Integration.Tests.Migrations
                 name: "Orders",
                 columns: table => new
                 {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreationAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CartItems = table.Column<List<string>>(type: "text[]", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DeliveryAddress = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderSaga",
+                columns: table => new
+                {
                     CorrelationId = table.Column<Guid>(type: "uuid", nullable: false),
                     DeliveryAddress = table.Column<string>(type: "text", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     CurrentState = table.Column<string>(type: "text", nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CompletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -27,7 +46,7 @@ namespace Orchestration.Integration.Tests.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Orders", x => x.CorrelationId);
+                    table.PrimaryKey("PK_OrderSaga", x => x.CorrelationId);
                 });
 
             migrationBuilder.CreateTable(
@@ -44,9 +63,9 @@ namespace Orchestration.Integration.Tests.Migrations
                 {
                     table.PrimaryKey("PK_GoodViewModel", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GoodViewModel_Orders_OrderSagaCorrelationId",
+                        name: "FK_GoodViewModel_OrderSaga_OrderSagaCorrelationId",
                         column: x => x.OrderSagaCorrelationId,
-                        principalTable: "Orders",
+                        principalTable: "OrderSaga",
                         principalColumn: "CorrelationId");
                 });
 
@@ -64,6 +83,9 @@ namespace Orchestration.Integration.Tests.Migrations
 
             migrationBuilder.DropTable(
                 name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "OrderSaga");
         }
     }
 }
